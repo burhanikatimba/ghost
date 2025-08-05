@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+import argparse
+from core.scanner import Scanner
+from core.report import generate_html_report
+
+def show_help():
+    print("""
+GHOST - Web App Security Scanner
+
+Usage:
+  ghost -u <url> [--report] [--xss-only] [--sql-only] [--headers-only] [--full-scan]
+
+Options:
+  -u, --url           Target URL (e.g., http://localhost:8000)
+  --report            Generate HTML report of the findings
+  --xss-only          Run only XSS scan
+  --sql-only          Run only SQL injection scan
+  --headers-only      Run only security headers check
+  --full-scan         Run all checks (default)
+  --help              Show this help message
+""")
+
+def main():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-u", "--url", help="Target URL", required=False)
+    parser.add_argument("--report", action="store_true", help="Generate HTML report")
+    parser.add_argument("--xss-only", action="store_true", help="Run only XSS scan")
+    parser.add_argument("--sql-only", action="store_true", help="Run only SQLi scan")
+    parser.add_argument("--headers-only", action="store_true", help="Run only headers check")
+    parser.add_argument("--full-scan", action="store_true", help="Run all checks")
+    parser.add_argument("--help", action="store_true", help="Show help")
+    args = parser.parse_args()
+
+    if args.help or not args.url:
+        show_help()
+        return
+
+    scanner = Scanner(args.url)
+    results = {}
+
+    if args.xss_only:
+        results['xss'] = scanner.check_xss()
+    elif args.sql_only:
+        results['sql_injection'] = scanner.check_sql_injection()
+    elif args.headers_only:
+        results['headers'] = scanner.check_headers()
+    else:
+        results = scanner.run_all_checks()
+
+    if args.report:
+        generate_html_report(args.url, results)
+
+if __name__ == "__main__":
+    main()
